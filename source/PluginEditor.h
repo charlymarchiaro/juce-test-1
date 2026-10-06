@@ -21,5 +21,15 @@ private:
     PluginProcessor& processorRef;
     std::unique_ptr<melatonin::Inspector> inspector;
     juce::TextButton inspectButton{"Inspect the UI"};
+
+    juce::Slider centerNoteSlider;
+    juce::Slider deltaPercentSlider;
+    juce::Label centerNoteLabel;
+    juce::Label deltaPercentLabel;
+
+    using SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
+    std::unique_ptr<SliderAttachment> centerNoteAttachment;
+    std::unique_ptr<SliderAttachment> deltaPercentAttachment;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginEditor)
 };

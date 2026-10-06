@@ -10,12 +10,47 @@ PluginProcessor::PluginProcessor()
 #endif
         .withOutput("Output", juce::AudioChannelSet::stereo(), true)
 #endif
-    )
+        ),
+      parameters(*this, nullptr, "Parameters", createParameterLayout())
 {
+    centerNoteParam = parameters.getRawParameterValue(centerNoteId);
+    deltaPercentParam = parameters.getRawParameterValue(deltaPercentId);
 }
 
 PluginProcessor::~PluginProcessor()
 {
+}
+
+juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParameterLayout()
+{
+    juce::AudioProcessorValueTreeState::ParameterLayout layout;
+
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID { centerNoteId, 1 },
+        "Center Note",
+        juce::NormalisableRange<float>(minCenterNote, maxCenterNote, centerNoteStep),
+        defaultCenterNote,
+        juce::AudioParameterFloatAttributes()
+            .withStringFromValueFunction([](float note, int)
+            {
+                return juce::MidiMessage::getMidiNoteName(juce::roundToInt(note), true, true, 4)
+                    + " (" + juce::String(noteToFrequency(note), 1) + " Hz)";
+            })
+            .withValueFromStringFunction([](const juce::String& text)
+            {
+                // Accepts a frequency in Hz and picks the nearest note
+                const auto hz = juce::jmax(1.0, text.getDoubleValue());
+                return static_cast<float>(std::round(69.0 + 12.0 * std::log2(hz / 440.0)));
+            })));
+
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID { deltaPercentId, 1 },
+        "Delta",
+        juce::NormalisableRange<float>(0.0f, maxDeltaPercent),
+        defaultDeltaPercent,
+        juce::AudioParameterFloatAttributes().withLabel("%")));
+
+    return layout;
 }
 
 //==============================================================================
@@ -89,9 +124,15 @@ void PluginProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
     juce::ignoreUnused(samplesPerBlock);
 
+    currentSampleRate = sampleRate;
     phaseL = 0.0;
-    phaseIncrementL = juce::MathConstants<double>::twoPi * sineFrequencyL / sampleRate;
-    phaseIncrementR = juce::MathConstants<double>::twoPi * sineFrequencyR / sampleRate;
+    phaseR = 0.0;
+
+    centerFrequencySmoothed.reset(sampleRate, smoothingTimeSeconds);
+    centerFrequencySmoothed.setCurrentAndTargetValue(noteToFrequency(centerNoteParam->load()));
+
+    deltaPercentSmoothed.reset(sampleRate, smoothingTimeSeconds);
+    deltaPercentSmoothed.setCurrentAndTargetValue(deltaPercentParam->load());
 }
 
 void PluginProcessor::releaseResources()
@@ -131,9 +172,20 @@ void PluginProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     auto totalNumOutputChannels = getTotalNumOutputChannels();
     auto numSamples = buffer.getNumSamples();
 
-    // Generate a 220 Hz sine on every output channel, replacing any input
+    centerFrequencySmoothed.setTargetValue(noteToFrequency(centerNoteParam->load()));
+    deltaPercentSmoothed.setTargetValue(deltaPercentParam->load());
+
+    const auto twoPiOverSampleRate = juce::MathConstants<double>::twoPi / currentSampleRate;
+
+    // Sine at centerFrequency - delta/2 on even (L) channels, centerFrequency + delta/2 on odd (R)
+    // channels, replacing any input
     for (int sample = 0; sample < numSamples; ++sample)
     {
+        const auto centerFrequency = centerFrequencySmoothed.getNextValue();
+        const auto deltaFrequency = centerFrequency * deltaPercentSmoothed.getNextValue() / 100.0;
+        const auto phaseIncrementL = twoPiOverSampleRate * (centerFrequency - 0.5 * deltaFrequency);
+        const auto phaseIncrementR = twoPiOverSampleRate * (centerFrequency + 0.5 * deltaFrequency);
+
         auto valueL = sineAmplitude * static_cast<float>(std::sin(phaseL));
         auto valueR = sineAmplitude * static_cast<float>(std::sin(phaseR));
 
@@ -173,17 +225,15 @@ juce::AudioProcessorEditor* PluginProcessor::createEditor()
 //==============================================================================
 void PluginProcessor::getStateInformation(juce::MemoryBlock& destData)
 {
-    // You should use this method to store your parameters in the memory block.
-    // You could do that either as raw data, or use the XML or ValueTree classes
-    // as intermediaries to make it easy to save and load complex data.
-    juce::ignoreUnused(destData);
+    if (auto xml = parameters.copyState().createXml())
+        copyXmlToBinary(*xml, destData);
 }
 
 void PluginProcessor::setStateInformation(const void* data, int sizeInBytes)
 {
-    // You should use this method to restore your parameters from this memory block,
-    // whose contents will have been created by the getStateInformation() call.
-    juce::ignoreUnused(data, sizeInBytes);
+    if (auto xml = getXmlFromBinary(data, sizeInBytes))
+        if (xml->hasTagName(parameters.state.getType()))
+            parameters.replaceState(juce::ValueTree::fromXml(*xml));
 }
 
 //==============================================================================

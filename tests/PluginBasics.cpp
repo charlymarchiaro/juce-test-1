@@ -2,6 +2,7 @@
 #include <PluginProcessor.h>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
+#include <catch2/catch_approx.hpp>
 
 TEST_CASE ("one is equal to one", "[dummy]")
 {
@@ -39,3 +40,21 @@ TEST_CASE ("IPP version", "[ipp]")
     #endif
 }
 #endif
+
+TEST_CASE ("Center note moves in semitone steps", "[parameters]")
+{
+    PluginProcessor testPlugin;
+    auto* param = testPlugin.parameters.getParameter (PluginProcessor::centerNoteId);
+    REQUIRE (param != nullptr);
+
+    for (auto normalised : { 0.0f, 0.1234f, 0.5f, 0.777f, 1.0f })
+    {
+        param->setValueNotifyingHost (normalised);
+        const auto note = testPlugin.parameters.getRawParameterValue (PluginProcessor::centerNoteId)->load();
+        CHECK (note == std::round (note));
+    }
+
+    CHECK (PluginProcessor::noteToFrequency (PluginProcessor::minCenterNote) == Catch::Approx (27.5));
+    CHECK (PluginProcessor::noteToFrequency (PluginProcessor::defaultCenterNote) == Catch::Approx (220.0));
+    CHECK (PluginProcessor::noteToFrequency (PluginProcessor::maxCenterNote) == Catch::Approx (4186.01).epsilon (1.0e-5));
+}

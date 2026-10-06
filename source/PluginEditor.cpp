@@ -3,7 +3,27 @@
 PluginEditor::PluginEditor(PluginProcessor& p)
     : AudioProcessorEditor(&p), processorRef(p)
 {
-    juce::ignoreUnused(processorRef);
+    auto setupSlider = [this](juce::Slider& slider, juce::Label& label, const juce::String& text, const juce::String& suffix)
+    {
+        slider.setSliderStyle(juce::Slider::LinearHorizontal);
+        slider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 120, 20);
+        slider.setTextValueSuffix(suffix);
+        addAndMakeVisible(slider);
+
+        label.setText(text, juce::dontSendNotification);
+        label.attachToComponent(&slider, true);
+        addAndMakeVisible(label);
+    };
+
+    setupSlider(centerNoteSlider, centerNoteLabel, "Center", {});
+    setupSlider(deltaPercentSlider, deltaPercentLabel, "Delta", " %");
+
+    // The attachment copies the parameter's range to the slider, i.e. it does the equivalent of
+    // setRange(minCenterNote, maxCenterNote, centerNoteStep) — one-semitone steps from A0 to C8
+    centerNoteAttachment = std::make_unique<SliderAttachment>(processorRef.parameters, PluginProcessor::centerNoteId, centerNoteSlider);
+    deltaPercentAttachment = std::make_unique<SliderAttachment>(processorRef.parameters, PluginProcessor::deltaPercentId, deltaPercentSlider);
+
+    deltaPercentSlider.setNumDecimalPlacesToDisplay(2);
 
     addAndMakeVisible(inspectButton);
 
@@ -38,13 +58,19 @@ void PluginEditor::paint(juce::Graphics& g)
     g.setFont(16.0f);
     auto helloWorld = juce::String("Hello from ") + PRODUCT_NAME_WITHOUT_VERSION + " v" VERSION + " running in " +
         CMAKE_BUILD_TYPE;
-    g.drawText(helloWorld, area.removeFromTop(150), juce::Justification::centred, false);
+    g.drawText(helloWorld, area.removeFromTop(80), juce::Justification::centred, false);
 }
 
 void PluginEditor::resized()
 {
     // layout the positions of your child components here
-    auto area = getLocalBounds();
-    area.removeFromBottom(50);
-    inspectButton.setBounds(getLocalBounds().withSizeKeepingCentre(100, 50));
+    auto area = getLocalBounds().reduced(20);
+    area.removeFromTop(60);
+
+    area.removeFromLeft(60); // room for the attached labels
+    centerNoteSlider.setBounds(area.removeFromTop(40));
+    area.removeFromTop(10);
+    deltaPercentSlider.setBounds(area.removeFromTop(40));
+
+    inspectButton.setBounds(area.withSizeKeepingCentre(100, 40).translated(-30, 0));
 }
