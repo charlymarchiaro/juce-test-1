@@ -48,7 +48,7 @@ public:
     static double noteToFrequency(double note) { return 440.0 * std::exp2((note - 69.0) / 12.0); }
 
     // Max L/R frequency difference, as a percent of the center frequency
-    static constexpr float maxDeltaPercent = 5.0f;
+    static constexpr float maxDeltaPercent = 10.0f;
     static constexpr float defaultDeltaPercent = 1.0f;
 
     static inline const juce::String centerNoteId = "centerNote";
