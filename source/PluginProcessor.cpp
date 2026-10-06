@@ -89,8 +89,9 @@ void PluginProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
     juce::ignoreUnused(samplesPerBlock);
 
-    phase = 0.0;
-    phaseIncrement = juce::MathConstants<double>::twoPi * sineFrequency / sampleRate;
+    phaseL = 0.0;
+    phaseIncrementL = juce::MathConstants<double>::twoPi * sineFrequencyL / sampleRate;
+    phaseIncrementR = juce::MathConstants<double>::twoPi * sineFrequencyR / sampleRate;
 }
 
 void PluginProcessor::releaseResources()
@@ -133,14 +134,28 @@ void PluginProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     // Generate a 220 Hz sine on every output channel, replacing any input
     for (int sample = 0; sample < numSamples; ++sample)
     {
-        auto value = sineAmplitude * static_cast<float>(std::sin(phase));
+        auto valueL = sineAmplitude * static_cast<float>(std::sin(phaseL));
+        auto valueR = sineAmplitude * static_cast<float>(std::sin(phaseR));
 
         for (int channel = 0; channel < totalNumOutputChannels; ++channel)
-            buffer.setSample(channel, sample, value);
+        {
+            if (channel % 2 == 0)
+            {
+                buffer.setSample(channel, sample, valueL);
+            }
+            else
+            {
+                buffer.setSample(channel, sample, valueR);
+            }
+        }
 
-        phase += phaseIncrement;
-        if (phase >= juce::MathConstants<double>::twoPi)
-            phase -= juce::MathConstants<double>::twoPi;
+        phaseL += phaseIncrementL;
+        if (phaseL >= juce::MathConstants<double>::twoPi)
+            phaseL -= juce::MathConstants<double>::twoPi;
+
+        phaseR += phaseIncrementR;
+        if (phaseR >= juce::MathConstants<double>::twoPi)
+            phaseR -= juce::MathConstants<double>::twoPi;
     }
 }
 

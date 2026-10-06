@@ -39,11 +39,14 @@ public:
     void setStateInformation(const void* data, int sizeInBytes) override;
 
 private:
-    static constexpr double sineFrequency = 220.0;
+    static constexpr double sineFrequencyL = 220.0;
+    static constexpr double sineFrequencyR = 222.0;
     static constexpr float sineAmplitude = 0.2f;
 
-    double phase = 0.0;
-    double phaseIncrement = 0.0;
+    double phaseL = 0.0;
+    double phaseR = 0.0;
+    double phaseIncrementL = 0.0;
+    double phaseIncrementR = 0.0;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginProcessor)
 };
