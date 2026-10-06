@@ -56,6 +56,18 @@ public:
 
     juce::AudioProcessorValueTreeState parameters;
 
+    // A received MIDI message, copied into fixed-size storage so the audio thread never allocates.
+    // Messages longer than 3 bytes (SysEx) only keep their length.
+    struct MidiLogEntry
+    {
+        std::array<juce::uint8, 3> bytes {};
+        int size = 0;
+        double timeSeconds = 0.0; // since playback started
+    };
+
+    // Message thread: moves up to maxEntries pending entries into dest, oldest first. Returns the count.
+    int popMidiLogEntries(MidiLogEntry* dest, int maxEntries);
+
 private:
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 
@@ -71,6 +83,12 @@ private:
     juce::SmoothedValue<double, juce::ValueSmoothingTypes::Linear> deltaPercentSmoothed;
 
     double currentSampleRate = 44100.0;
+
+    // Audio thread -> message thread. If nobody reads it (editor closed) it fills up and new messages are dropped.
+    static constexpr int midiLogCapacity = 256;
+    juce::AbstractFifo midiLogFifo { midiLogCapacity };
+    std::array<MidiLogEntry, midiLogCapacity> midiLogBuffer {};
+    juce::int64 samplesProcessed = 0;
 
     double phaseL = 0.0;
     double phaseR = 0.0;

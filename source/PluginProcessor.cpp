@@ -127,6 +127,7 @@ void PluginProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
     currentSampleRate = sampleRate;
     phaseL = 0.0;
     phaseR = 0.0;
+    samplesProcessed = 0;
 
     centerFrequencySmoothed.reset(sampleRate, smoothingTimeSeconds);
     centerFrequencySmoothed.setCurrentAndTargetValue(noteToFrequency(centerNoteParam->load()));
@@ -166,9 +167,20 @@ bool PluginProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const
 void PluginProcessor::processBlock(juce::AudioBuffer<float>& buffer,
                                    juce::MidiBuffer& midiMessages)
 {
-    juce::ignoreUnused(midiMessages);
-
     juce::ScopedNoDenormals noDenormals;
+
+    for (const auto metadata : midiMessages)
+    {
+        auto scope = midiLogFifo.write(1);
+        if (scope.blockSize1 + scope.blockSize2 == 0)
+            break; // FIFO full, drop
+
+        auto& entry = scope.blockSize1 > 0 ? midiLogBuffer[(size_t) scope.startIndex1] : midiLogBuffer[(size_t) scope.startIndex2];
+        entry.size = metadata.numBytes;
+        std::copy_n(metadata.data, juce::jmin(metadata.numBytes, (int) entry.bytes.size()), entry.bytes.begin());
+        entry.timeSeconds = (double) (samplesProcessed + metadata.samplePosition) / currentSampleRate;
+    }
+
     auto totalNumOutputChannels = getTotalNumOutputChannels();
     auto numSamples = buffer.getNumSamples();
 
@@ -209,6 +221,21 @@ void PluginProcessor::processBlock(juce::AudioBuffer<float>& buffer,
         if (phaseR >= juce::MathConstants<double>::twoPi)
             phaseR -= juce::MathConstants<double>::twoPi;
     }
+
+    samplesProcessed += numSamples;
+}
+
+int PluginProcessor::popMidiLogEntries(MidiLogEntry* dest, int maxEntries)
+{
+    auto scope = midiLogFifo.read(juce::jmin(maxEntries, midiLogFifo.getNumReady()));
+
+    for (int i = 0; i < scope.blockSize1; ++i)
+        dest[i] = midiLogBuffer[(size_t) (scope.startIndex1 + i)];
+
+    for (int i = 0; i < scope.blockSize2; ++i)
+        dest[scope.blockSize1 + i] = midiLogBuffer[(size_t) (scope.startIndex2 + i)];
+
+    return scope.blockSize1 + scope.blockSize2;
 }
 
 //==============================================================================

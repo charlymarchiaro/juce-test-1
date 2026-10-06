@@ -5,7 +5,7 @@
 #include "melatonin_inspector/melatonin_inspector.h"
 
 //==============================================================================
-class PluginEditor : public juce::AudioProcessorEditor
+class PluginEditor : public juce::AudioProcessorEditor, private juce::Timer
 {
 public:
     explicit PluginEditor(PluginProcessor&);
@@ -16,6 +16,9 @@ public:
     void resized() override;
 
 private:
+    void timerCallback() override;
+    static juce::String describe(const PluginProcessor::MidiLogEntry& entry);
+
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
     PluginProcessor& processorRef;
@@ -30,6 +33,12 @@ private:
     using SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
     std::unique_ptr<SliderAttachment> centerNoteAttachment;
     std::unique_ptr<SliderAttachment> deltaPercentAttachment;
+
+    // Shows the last numMidiLogLines received MIDI messages, newest at the bottom
+    static constexpr int numMidiLogLines = 100;
+    juce::Label midiLogLabel;
+    juce::TextEditor midiLogText;
+    std::deque<juce::String> midiLogLines;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginEditor)
 };

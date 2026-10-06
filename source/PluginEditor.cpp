@@ -25,6 +25,15 @@ PluginEditor::PluginEditor(PluginProcessor& p)
 
     deltaPercentSlider.setNumDecimalPlacesToDisplay(2);
 
+    midiLogLabel.setText("Last " + juce::String(numMidiLogLines) + " MIDI input messages:", juce::dontSendNotification);
+    addAndMakeVisible(midiLogLabel);
+
+    midiLogText.setMultiLine(true);
+    midiLogText.setReadOnly(true);
+    midiLogText.setCaretVisible(false);
+    midiLogText.setFont(juce::FontOptions(juce::Font::getDefaultMonospacedFontName(), 10.0f, juce::Font::plain));
+    addAndMakeVisible(midiLogText);
+
     addAndMakeVisible(inspectButton);
 
     // this chunk of code instantiates and opens the melatonin inspector
@@ -41,11 +50,49 @@ PluginEditor::PluginEditor(PluginProcessor& p)
 
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
-    setSize(400, 300);
+    setSize(500, 560);
+
+    startTimerHz(30);
 }
 
 PluginEditor::~PluginEditor()
 {
+}
+
+void PluginEditor::timerCallback()
+{
+    std::array<PluginProcessor::MidiLogEntry, 64> entries;
+    bool changed = false;
+
+    while (const auto numRead = processorRef.popMidiLogEntries(entries.data(), (int) entries.size()))
+    {
+        for (int i = 0; i < numRead; ++i)
+            midiLogLines.push_back(describe(entries[(size_t) i]));
+
+        changed = true;
+    }
+
+    if (! changed)
+        return;
+
+    while (midiLogLines.size() > (size_t) numMidiLogLines)
+        midiLogLines.pop_front();
+
+    juce::StringArray lines;
+    for (const auto& line : midiLogLines)
+        lines.add(line);
+
+    midiLogText.setText(lines.joinIntoString("\n"), juce::dontSendNotification);
+}
+
+juce::String PluginEditor::describe(const PluginProcessor::MidiLogEntry& entry)
+{
+    const auto time = juce::String(entry.timeSeconds, 3).paddedLeft(' ', 9) + " s  ";
+
+    if (entry.size > (int) entry.bytes.size())
+        return time + "SysEx (" + juce::String(entry.size) + " bytes)";
+
+    return time + juce::MidiMessage(entry.bytes.data(), entry.size).getDescription();
 }
 
 void PluginEditor::paint(juce::Graphics& g)
@@ -72,5 +119,10 @@ void PluginEditor::resized()
     area.removeFromTop(10);
     deltaPercentSlider.setBounds(area.removeFromTop(40));
 
-    inspectButton.setBounds(area.withSizeKeepingCentre(100, 40).translated(-30, 0));
+    area.removeFromTop(10);
+    inspectButton.setBounds(area.removeFromTop(40).withSizeKeepingCentre(100, 40).translated(-30, 0));
+
+    area = getLocalBounds().reduced(20).withTop(area.getY() + 10);
+    midiLogLabel.setBounds(area.removeFromTop(24));
+    midiLogText.setBounds(area);
 }

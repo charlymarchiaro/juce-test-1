@@ -58,3 +58,26 @@ TEST_CASE ("Center note moves in semitone steps", "[parameters]")
     CHECK (PluginProcessor::noteToFrequency (PluginProcessor::defaultCenterNote) == Catch::Approx (220.0));
     CHECK (PluginProcessor::noteToFrequency (PluginProcessor::maxCenterNote) == Catch::Approx (4186.01).epsilon (1.0e-5));
 }
+
+TEST_CASE ("MIDI input is logged", "[midi]")
+{
+    PluginProcessor testPlugin;
+    CHECK (testPlugin.acceptsMidi());
+
+    testPlugin.prepareToPlay (48000.0, 512);
+
+    juce::AudioBuffer<float> buffer (2, 512);
+    juce::MidiBuffer midi;
+    midi.addEvent (juce::MidiMessage::noteOn (1, 60, (juce::uint8) 100), 0);
+    midi.addEvent (juce::MidiMessage::noteOff (1, 60), 480);
+    testPlugin.processBlock (buffer, midi);
+
+    std::array<PluginProcessor::MidiLogEntry, 8> entries;
+    REQUIRE (testPlugin.popMidiLogEntries (entries.data(), (int) entries.size()) == 2);
+
+    CHECK (juce::MidiMessage (entries[0].bytes.data(), entries[0].size).isNoteOn());
+    CHECK (juce::MidiMessage (entries[1].bytes.data(), entries[1].size).isNoteOff());
+    CHECK (entries[1].timeSeconds == Catch::Approx (0.01));
+
+    CHECK (testPlugin.popMidiLogEntries (entries.data(), (int) entries.size()) == 0);
+}

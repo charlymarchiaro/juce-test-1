@@ -89,6 +89,9 @@ juce_add_plugin("${PROJECT_NAME}"
     PLUGIN_CODE P001
     FORMATS "${FORMATS}"
 
+    # Receive MIDI input (logged in the editor)
+    NEEDS_MIDI_INPUT TRUE
+
     # The name of your final executable
     # This is how it's listed in the DAW
     # This can be different from PROJECT_NAME and can have spaces!
