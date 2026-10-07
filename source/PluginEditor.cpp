@@ -67,7 +67,7 @@ void PluginEditor::timerCallback()
     while (const auto numRead = processorRef.popMidiLogEntries(entries.data(), (int) entries.size()))
     {
         for (int i = 0; i < numRead; ++i)
-            midiLogLines.push_back(describe(entries[(size_t) i]));
+            midiLogLines.push_back(describe(entries[static_cast<size_t>(i)]));
 
         changed = true;
     }
@@ -75,7 +75,7 @@ void PluginEditor::timerCallback()
     if (! changed)
         return;
 
-    while (midiLogLines.size() > (size_t) numMidiLogLines)
+    while (midiLogLines.size() > static_cast<size_t>(numMidiLogLines))
         midiLogLines.pop_front();
 
     juce::StringArray lines;
