@@ -1,22 +1,26 @@
 #include "PluginEditor.h"
 
 PluginEditor::PluginEditor(PluginProcessor &p) : AudioProcessorEditor(&p), processorRef(p) {
-    auto setupSlider =
-            [this](juce::Slider &slider, juce::Label &label, const juce::String &text, const juce::String &suffix) {
-                slider.setSliderStyle(juce::Slider::LinearHorizontal);
-                slider.setTextBoxStyle(
-                        juce::Slider::TextBoxRight,
-                        false,
-                        120,
-                        20
-                );
-                slider.setTextValueSuffix(suffix);
-                addAndMakeVisible(slider);
+    auto setupSlider = [this](
+            juce::Slider &slider,
+            juce::Label &label,
+            const juce::String &text,
+            const juce::String &suffix
+    ) {
+        slider.setSliderStyle(juce::Slider::LinearHorizontal);
+        slider.setTextBoxStyle(
+                juce::Slider::TextBoxRight,
+                false,
+                120,
+                20
+        );
+        slider.setTextValueSuffix(suffix);
+        addAndMakeVisible(slider);
 
-                label.setText(text, juce::dontSendNotification);
-                label.attachToComponent(&slider, true);
-                addAndMakeVisible(label);
-            };
+        label.setText(text, juce::dontSendNotification);
+        label.attachToComponent(&slider, true);
+        addAndMakeVisible(label);
+    };
 
     setupSlider(centerNoteSlider, centerNoteLabel, "Center", {});
     setupSlider(deltaPercentSlider, deltaPercentLabel, "Delta", " %");
@@ -39,7 +43,9 @@ PluginEditor::PluginEditor(PluginProcessor &p) : AudioProcessorEditor(&p), proce
     deltaPercentSlider.setNumDecimalPlacesToDisplay(2);
 
     midiLogLabel.setText(
-            "Last " + juce::String(numMidiLogLines) + " MIDI input messages:",
+            "Last "
+            + juce::String(numMidiLogLines)
+            + " MIDI input messages:",
             juce::dontSendNotification
     );
     addAndMakeVisible(midiLogLabel);
@@ -86,7 +92,9 @@ void PluginEditor::timerCallback() {
             (int) entries.size()
     )) {
         for (int i = 0; i < numRead; ++i)
-            midiLogLines.push_back(describe(entries[static_cast<size_t>(i)]));
+            midiLogLines.push_back(
+                    describe(entries[static_cast<size_t>(i)])
+            );
 
         changed = true;
     }
