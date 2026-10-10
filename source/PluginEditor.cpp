@@ -81,7 +81,7 @@ PluginEditor::PluginEditor(PluginProcessor &p) : AudioProcessorEditor(&p), proce
   startTimerHz(30);
 }
 
-PluginEditor::~PluginEditor() {}
+PluginEditor::~PluginEditor() = default;
 
 void PluginEditor::timerCallback() {
   std::array<PluginProcessor::MidiLogEntry, 64> entries;
@@ -104,8 +104,12 @@ void PluginEditor::timerCallback() {
     return;
   }
 
-  while (midiLogLines.size() > static_cast<size_t>(numMidiLogLines)) {
-    midiLogLines.pop_front();
+  if (midiLogLines.size() > static_cast<size_t>(numMidiLogLines)) {
+    const auto excess = midiLogLines.size() - static_cast<size_t>(numMidiLogLines);
+    midiLogLines.erase(
+      midiLogLines.begin(),
+      midiLogLines.begin() + static_cast<std::ptrdiff_t>(excess)
+    );
   }
 
   juce::StringArray lines;
@@ -136,7 +140,7 @@ juce::String PluginEditor::describe(const PluginProcessor::MidiLogEntry &entry) 
 
 void PluginEditor::paint(juce::Graphics &g) {
   // (Our component is opaque, so we must completely fill
-  // the background with a solid colour)
+  // the background with a solid color)
   g.fillAll(getLookAndFeel().findColour(
     juce::ResizableWindow::backgroundColourId)
   );

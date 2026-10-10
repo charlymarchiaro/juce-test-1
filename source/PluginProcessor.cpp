@@ -33,7 +33,7 @@ PluginProcessor::PluginProcessor()
   );
 }
 
-PluginProcessor::~PluginProcessor() {}
+PluginProcessor::~PluginProcessor() = default;
 
 juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParameterLayout() {
   juce::AudioProcessorValueTreeState::ParameterLayout layout;
@@ -225,7 +225,7 @@ void PluginProcessor::processBlock(
     );
 
     entry.timeSeconds = (double) (
-      (samplesProcessed + metadata.samplePosition) / currentSampleRate
+      (samplesProcessed + metadata.samplePosition) / currentSampleRate  // NOLINT(*-narrowing-conversions)
     );
   }
 
@@ -290,11 +290,11 @@ int PluginProcessor::popMidiLogEntries(MidiLogEntry *dest, int maxEntries) {
   );
 
   for (int i = 0; i < scope.blockSize1; ++i) {
-    dest[i] = midiLogBuffer[(size_t) (scope.startIndex1 + i)];
+    dest[i] = midiLogBuffer[(size_t) (scope.startIndex1 + i)]; // NOLINT(*-misplaced-widening-cast)
   }
 
   for (int i = 0; i < scope.blockSize2; ++i) {
-    dest[scope.blockSize1 + i] = midiLogBuffer[(size_t) (scope.startIndex2 + i)];
+    dest[scope.blockSize1 + i] = midiLogBuffer[(size_t) (scope.startIndex2 + i)]; // NOLINT(*-misplaced-widening-cast)
   }
 
   return scope.blockSize1 + scope.blockSize2;
