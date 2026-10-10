@@ -16,11 +16,11 @@ public:
 
   void releaseResources() override;
 
-  bool isBusesLayoutSupported(const BusesLayout &layouts) const override;
+  bool isBusesLayoutSupported(const BusesLayout& layouts) const override;
 
-  void processBlock(juce::AudioBuffer<float> &, juce::MidiBuffer &) override;
+  void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
 
-  juce::AudioProcessorEditor *createEditor() override;
+  juce::AudioProcessorEditor* createEditor() override;
 
   bool hasEditor() const override;
 
@@ -42,11 +42,11 @@ public:
 
   const juce::String getProgramName(int index) override;
 
-  void changeProgramName(int index, const juce::String &newName) override;
+  void changeProgramName(int index, const juce::String& newName) override;
 
-  void getStateInformation(juce::MemoryBlock &destData) override;
+  void getStateInformation(juce::MemoryBlock& destData) override;
 
-  void setStateInformation(const void *data, int sizeInBytes) override;
+  void setStateInformation(const void* data, int sizeInBytes) override;
 
   // Center pitch as a MIDI note number, in 1-semitone steps over the piano
   // register: A0 (21) to C8 (108). Linear in semitones is logarithmic in
@@ -80,7 +80,7 @@ public:
 
   // Message thread: moves up to maxEntries pending entries into dest, oldest
   // first. Returns the count.
-  int popMidiLogEntries(MidiLogEntry *dest, int maxEntries);
+  int popMidiLogEntries(MidiLogEntry* dest, int maxEntries);
 
 private:
   static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
@@ -88,8 +88,8 @@ private:
   static constexpr float sineAmplitude = 0.2f;
   static constexpr double smoothingTimeSeconds = 0.05;
 
-  std::atomic<float> *centerNoteParam = nullptr;
-  std::atomic<float> *deltaPercentParam = nullptr;
+  std::atomic<float>* centerNoteParam = nullptr;
+  std::atomic<float>* deltaPercentParam = nullptr;
 
   // Center frequency is smoothed multiplicatively (constant rate in pitch),
   // delta percent linearly

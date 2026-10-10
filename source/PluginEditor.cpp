@@ -1,11 +1,11 @@
 #include "PluginEditor.h"
 
-PluginEditor::PluginEditor(PluginProcessor &p) : AudioProcessorEditor(&p), processorRef(p) {
+PluginEditor::PluginEditor(PluginProcessor& p) : AudioProcessorEditor(&p), processorRef(p) {
   auto setupSlider = [this](
-    juce::Slider &slider,
-    juce::Label &label,
-    const juce::String &text,
-    const juce::String &suffix
+    juce::Slider& slider,
+    juce::Label& label,
+    const juce::String& text,
+    const juce::String& suffix
   ) {
     slider.setSliderStyle(juce::Slider::LinearHorizontal);
     slider.setTextBoxStyle(
@@ -114,7 +114,7 @@ void PluginEditor::timerCallback() {
 
   juce::StringArray lines;
 
-  for (const auto &line: midiLogLines) {
+  for (const auto& line: midiLogLines) {
     lines.add(line);
   }
 
@@ -124,7 +124,7 @@ void PluginEditor::timerCallback() {
   );
 }
 
-juce::String PluginEditor::describe(const PluginProcessor::MidiLogEntry &entry) {
+juce::String PluginEditor::describe(const PluginProcessor::MidiLogEntry& entry) {
   const auto time = juce::String(entry.timeSeconds, 3)
                       .paddedLeft(' ', 9) + " s  ";
 
@@ -138,7 +138,7 @@ juce::String PluginEditor::describe(const PluginProcessor::MidiLogEntry &entry) 
   ).getDescription();
 }
 
-void PluginEditor::paint(juce::Graphics &g) {
+void PluginEditor::paint(juce::Graphics& g) {
   // (Our component is opaque, so we must completely fill
   // the background with a solid color)
   g.fillAll(getLookAndFeel().findColour(

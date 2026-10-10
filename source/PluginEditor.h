@@ -6,23 +6,23 @@
 //==============================================================================
 class PluginEditor : public juce::AudioProcessorEditor, private juce::Timer {
 public:
-  explicit PluginEditor(PluginProcessor &);
+  explicit PluginEditor(PluginProcessor&);
 
   ~PluginEditor() override;
 
   //==============================================================================
-  void paint(juce::Graphics &) override;
+  void paint(juce::Graphics&) override;
 
   void resized() override;
 
 private:
   void timerCallback() override;
 
-  static juce::String describe(const PluginProcessor::MidiLogEntry &entry);
+  static juce::String describe(const PluginProcessor::MidiLogEntry& entry);
 
   // This reference is provided as a quick way for your editor to
   // access the processor object that created it.
-  PluginProcessor &processorRef;
+  PluginProcessor& processorRef;
   std::unique_ptr<melatonin::Inspector> inspector;
   juce::TextButton inspectButton{"Inspect the UI"};
 

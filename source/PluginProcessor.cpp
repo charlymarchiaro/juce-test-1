@@ -2,8 +2,7 @@
 #include "PluginEditor.h"
 
 //==============================================================================
-PluginProcessor::PluginProcessor()
-  : AudioProcessor(
+PluginProcessor::PluginProcessor() : AudioProcessor(
   BusesProperties()
 #if !JucePlugin_IsMidiEffect
 #if !JucePlugin_IsSynth
@@ -62,7 +61,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParam
             + " Hz)"
           );
         })
-        .withValueFromStringFunction([](const juce::String &text) {
+        .withValueFromStringFunction([](const juce::String& text) {
           // Accepts a frequency in Hz and picks the nearest note
           const auto hz = juce::jmax(1.0, text.getDoubleValue());
           return static_cast<float>(
@@ -143,7 +142,7 @@ const juce::String PluginProcessor::getProgramName(int index) {
   return "Default";
 }
 
-void PluginProcessor::changeProgramName(int index, const juce::String &newName) {
+void PluginProcessor::changeProgramName(int index, const juce::String& newName) {
   juce::ignoreUnused(index, newName);
 }
 
@@ -178,7 +177,7 @@ void PluginProcessor::releaseResources() {
   // up any spare memory, etc.
 }
 
-bool PluginProcessor::isBusesLayoutSupported(const BusesLayout &layouts) const {
+bool PluginProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const {
 #if JucePlugin_IsMidiEffect
   juce::ignoreUnused(layouts);
   return true;
@@ -200,8 +199,8 @@ bool PluginProcessor::isBusesLayoutSupported(const BusesLayout &layouts) const {
 }
 
 void PluginProcessor::processBlock(
-  juce::AudioBuffer<float> &buffer,
-  juce::MidiBuffer &midiMessages
+  juce::AudioBuffer<float>& buffer,
+  juce::MidiBuffer& midiMessages
 ) {
   juce::ScopedNoDenormals noDenormals;
 
@@ -212,7 +211,7 @@ void PluginProcessor::processBlock(
       break; // FIFO full, drop
     }
 
-    auto &entry = scope.blockSize1 > 0
+    auto& entry = scope.blockSize1 > 0
                   ? midiLogBuffer[(size_t) scope.startIndex1]
                   : midiLogBuffer[(size_t) scope.startIndex2];
 
@@ -284,7 +283,7 @@ void PluginProcessor::processBlock(
   samplesProcessed += numSamples;
 }
 
-int PluginProcessor::popMidiLogEntries(MidiLogEntry *dest, int maxEntries) {
+int PluginProcessor::popMidiLogEntries(MidiLogEntry* dest, int maxEntries) {
   auto scope = midiLogFifo.read(
     juce::jmin(maxEntries, midiLogFifo.getNumReady())
   );
@@ -305,18 +304,18 @@ bool PluginProcessor::hasEditor() const {
   return true; // (change this to false if you choose to not supply an editor)
 }
 
-juce::AudioProcessorEditor *PluginProcessor::createEditor() {
+juce::AudioProcessorEditor* PluginProcessor::createEditor() {
   return new PluginEditor(*this);
 }
 
 //==============================================================================
-void PluginProcessor::getStateInformation(juce::MemoryBlock &destData) {
+void PluginProcessor::getStateInformation(juce::MemoryBlock& destData) {
   if (auto xml = parameters.copyState().createXml()) {
     copyXmlToBinary(*xml, destData);
   }
 }
 
-void PluginProcessor::setStateInformation(const void *data, int sizeInBytes) {
+void PluginProcessor::setStateInformation(const void* data, int sizeInBytes) {
   if (auto xml = getXmlFromBinary(data, sizeInBytes)) {
     if (xml->hasTagName(parameters.state.getType())) {
       parameters.replaceState(juce::ValueTree::fromXml(*xml));
@@ -326,6 +325,6 @@ void PluginProcessor::setStateInformation(const void *data, int sizeInBytes) {
 
 //==============================================================================
 // This creates new instances of the plugin..
-juce::AudioProcessor *JUCE_CALLTYPE createPluginFilter() {
+juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter() {
   return new PluginProcessor();
 }
