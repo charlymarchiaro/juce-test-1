@@ -152,8 +152,8 @@ void PluginEditor::paint(juce::Graphics& g) {
   auto helloWorld = juce::String("Hello from ")
                     + PRODUCT_NAME_WITHOUT_VERSION
                     + " v" VERSION
-                    + " running in " +
-                    CMAKE_BUILD_TYPE;
+                    + " running in "
+                    + CMAKE_BUILD_TYPE;
   g.drawText(
     helloWorld,
     area.removeFromTop(80),
