@@ -50,15 +50,17 @@ juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::createParam
       defaultCenterNote,
       juce::AudioParameterFloatAttributes()
         .withStringFromValueFunction([](float note, int) {
-          return juce::MidiMessage::getMidiNoteName(
-            juce::roundToInt(note),
-            true,
-            true,
-            4
-          )
-                 + " ("
-                 + juce::String(noteToFrequency(note), 1)
-                 + " Hz)";
+          return (
+            juce::MidiMessage::getMidiNoteName(
+              juce::roundToInt(note),
+              true,
+              true,
+              4
+            )
+            + " ("
+            + juce::String(noteToFrequency(note), 1)
+            + " Hz)"
+          );
         })
         .withValueFromStringFunction([](const juce::String &text) {
           // Accepts a frequency in Hz and picks the nearest note
@@ -205,21 +207,23 @@ void PluginProcessor::processBlock(
 
   for (const auto metadata: midiMessages) {
     auto scope = midiLogFifo.write(1);
-    if (scope.blockSize1 + scope.blockSize2 == 0)
+
+    if (scope.blockSize1 + scope.blockSize2 == 0) {
       break; // FIFO full, drop
+    }
 
     auto &entry = scope.blockSize1 > 0
                   ? midiLogBuffer[(size_t) scope.startIndex1]
                   : midiLogBuffer[(size_t) scope.startIndex2];
+
     entry.size = metadata.numBytes;
+
     std::copy_n(
       metadata.data,
-      juce::jmin(
-        metadata.numBytes,
-        (int) entry.bytes.size()
-      ),
+      juce::jmin(metadata.numBytes, (int) entry.bytes.size()),
       entry.bytes.begin()
     );
+
     entry.timeSeconds = (double) (
       (samplesProcessed + metadata.samplePosition) / currentSampleRate
     );
@@ -247,6 +251,7 @@ void PluginProcessor::processBlock(
     const auto deltaFrequency = (
       centerFrequency * deltaPercentSmoothed.getNextValue() / 100.0
     );
+
     const auto phaseIncrementL = (
       twoPiOverSampleRate * (centerFrequency - 0.5 * deltaFrequency)
     );
@@ -266,12 +271,14 @@ void PluginProcessor::processBlock(
     }
 
     phaseL += phaseIncrementL;
-    if (phaseL >= juce::MathConstants<double>::twoPi)
+    if (phaseL >= juce::MathConstants<double>::twoPi) {
       phaseL -= juce::MathConstants<double>::twoPi;
+    }
 
     phaseR += phaseIncrementR;
-    if (phaseR >= juce::MathConstants<double>::twoPi)
+    if (phaseR >= juce::MathConstants<double>::twoPi) {
       phaseR -= juce::MathConstants<double>::twoPi;
+    }
   }
 
   samplesProcessed += numSamples;
@@ -282,19 +289,20 @@ int PluginProcessor::popMidiLogEntries(MidiLogEntry *dest, int maxEntries) {
     juce::jmin(maxEntries, midiLogFifo.getNumReady())
   );
 
-  for (int i = 0; i < scope.blockSize1; ++i)
+  for (int i = 0; i < scope.blockSize1; ++i) {
     dest[i] = midiLogBuffer[(size_t) (scope.startIndex1 + i)];
+  }
 
-  for (int i = 0; i < scope.blockSize2; ++i)
+  for (int i = 0; i < scope.blockSize2; ++i) {
     dest[scope.blockSize1 + i] = midiLogBuffer[(size_t) (scope.startIndex2 + i)];
+  }
 
   return scope.blockSize1 + scope.blockSize2;
 }
 
 //==============================================================================
 bool PluginProcessor::hasEditor() const {
-  return true; // (change this to false if you choose to not supply an
-  // editor)
+  return true; // (change this to false if you choose to not supply an editor)
 }
 
 juce::AudioProcessorEditor *PluginProcessor::createEditor() {
@@ -303,14 +311,17 @@ juce::AudioProcessorEditor *PluginProcessor::createEditor() {
 
 //==============================================================================
 void PluginProcessor::getStateInformation(juce::MemoryBlock &destData) {
-  if (auto xml = parameters.copyState().createXml())
+  if (auto xml = parameters.copyState().createXml()) {
     copyXmlToBinary(*xml, destData);
+  }
 }
 
 void PluginProcessor::setStateInformation(const void *data, int sizeInBytes) {
-  if (auto xml = getXmlFromBinary(data, sizeInBytes))
-    if (xml->hasTagName(parameters.state.getType()))
+  if (auto xml = getXmlFromBinary(data, sizeInBytes)) {
+    if (xml->hasTagName(parameters.state.getType())) {
       parameters.replaceState(juce::ValueTree::fromXml(*xml));
+    }
+  }
 }
 
 //==============================================================================
